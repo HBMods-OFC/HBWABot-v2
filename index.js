@@ -1,257 +1,278 @@
-
+//Script by Herbert
 require('./settings')
-const { default: XeonBotIncConnect, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
-const { state, saveState } = useSingleFileAuthState(`${sessionName}.json`)
+const { default: HBWABotIncConnect, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto , delay} = require("@adiwajshing/baileys")
 const pino = require('pino')
-const { Boom } = require('@hapi/boom')
+const logg = require('pino')
+global.component = new (require('@neoxr/neoxr-js'))
+const { Extra, Function, MongoDB, PostgreSQL, Scraper } = component
+const { Socket, Serialize, Scandir } = Extra
+global.Func = Function
 const fs = require('fs')
-const yargs = require('yargs/yargs')
 const chalk = require('chalk')
 const FileType = require('file-type')
 const path = require('path')
-const _ = require('lodash')
-const axios = require('axios')
+const { exec, spawn, execSync } = require('child_process')
+const  { Boom } = require('@hapi/boom')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
-const { TelegraPh } = require('./lib/uploader')
-const moment = require('moment-timezone')
-const getRandom = (ext) => {
-	return `${Math.floor(Math.random() * 10000)}${ext}`
-}
-var low
-try {
-  low = require('lowdb')
-} catch (e) {
-  low = require('./lib/lowdb')
-}
-
-const { Low, JSONFile } = low
-const mongoDB = require('./lib/mongoDB')
+const Herbert = require('drips-memes')
 
 global.api = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({ ...query, ...(apikeyqueryname ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {}) })) : '')
-
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
+const { say } =  require('cfonts')
+const { color } = require('./lib/color')
+say('HBWABot\nV2.9', {
+    font: '3d',
+    colors: ["#0ff",'green',"#ff0"],
+    align: 'center',
+    gradient: false,
+    background: "transparent",
+    letterSpacing: 1,
+    lineHeight: 1,
+    space: true,
+    maxLenght: '0'
 
-global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
-global.db = new Low(
-  /https?:\/\//.test(opts['db'] || '') ?
-    new cloudDBAdapter(opts['db']) : /mongodb/.test(opts['db']) ?
-      new mongoDB(opts['db']) :
-      new JSONFile(`src/database.json`)
-)
-global.DATABASE = global.db
-global.loadDatabase = async function loadDatabase() {
-  if (global.db.READ) return new Promise((resolve) => setInterval(function () { (!global.db.READ ? (clearInterval(this), resolve(global.db.data == null ? global.loadDatabase() : global.db.data)) : null) }, 1 * 1000))
-  if (global.db.data !== null) return
-  global.db.READ = true
-  await global.db.read()
-  global.db.READ = false
-  global.db.data = {
-    users: {},
-    chats: {},
-    database: {},
-    game: {},
-    settings: {},
-    others: {},
-    sticker: {},
-    ...(global.db.data || {})
-  }
-  global.db.chain = _.chain(global.db.data)
-}
-loadDatabase()
+  })
+  say(`HBWABot By @${author.name || author}`, {
+    font: 'console',
+    align: 'center',
+    gradient: ['red', 'green']
+  })
+Herbert.hr();
+console.log(color(''), color('THANKS FOR CHOOSING HBWABOT', 'green'))
+console.log(color(''), color('SCRIPT BY HBMODS', 'red'))
+console.log(color( ''), color('https://wa.me/918416093656','cyan'))
+Herbert.hr();
+Herbert.banner(`HBMods HBWABOT OWNER`)
+Herbert.ok('WELCOME TO HBMods')
+Herbert.done('I WROTE THIS SCRIPT BY MYSELF')
+Herbert.info('YOU WANNA CONTRUBUTE FEEL FREE TO CONTACT ME, BEING FRIENDLY IS MY LANGUAGE')
+Herbert.error('')
+Herbert.time('')
+Herbert.hr();
 
-process.on('uncaughtException', console.error)
-
-// save database every 30seconds
-if (global.db) setInterval(async () => {
-    if (global.db.data) await global.db.write()
-  }, 30 * 1000)
-
-async function startXeonBotInc() {
-    const XeonBotInc = XeonBotIncConnect({
-        logger: pino({ level: 'silent' }),
+async function startHBWABotInc() {
+    const connectToWhatsApp = async () => {
+	const { state, saveCreds } = await useMultiFileAuthState('bot_session')
+    const HBWABotInc = HBWABotIncConnect({
         printQRInTerminal: true,
-        browser: ['HBWABot','Safari','1.0.0'],
-        auth: state
-    })
+         syncFullHistory: true,
+         logger: logg({ level: 'silent' }),
+         auth: state,
+         browser: ["HBWABOT", "Safari", "3.0"],
+         patchMessageBeforeSending: (message) => {
+                const requiresPatch = !!(
+                    message.buttonsMessage 
+                    || message.templateMessage
+                    || message.listMessage
+                );
+                if (requiresPatch) {
+                    message = {
+                        viewOnceMessage: {
+                            message: {
+                                messageContextInfo: {
+                                    deviceListMetadataVersion: 2,
+                                    deviceListMetadata: {},
+                                },
+                                ...message,
+                            },
+                        },
+                    };
+                }
 
-    store.bind(XeonBotInc.ev)
-    
-    // anticall auto block
-    XeonBotInc.ws.on('CB:call', async (json) => {
-    const callerId = json.content[0].attrs['call-creator']
-    if (json.content[0].tag == 'offer') {
-    let blockxeon = await XeonBotInc.sendContact(callerId, global.owner)
-    XeonBotInc.sendMessage(callerId, { text: `*Automatic blocking system!*\n*Don't call bot*!\n*Please contact the owner to open block !*`}, { quoted : blockxeon })
-    await sleep(8000)
-    await XeonBotInc.updateBlockStatus(callerId, "block")
-    }
+                return message;
+            },
+	    getMessage: async key => {
+              return {
+              }
+          }
     })
+    store.bind(HBWABotInc.ev)
 
-    XeonBotInc.ev.on('messages.upsert', async chatUpdate => {
+    const _0x4ae3ec=_0x5a3c;function _0x5a3c(_0x3d1a9c,_0x3d0681){const _0x3a9e44=_0x3a9e();return _0x5a3c=function(_0x5a3ce7,_0x3926dd){_0x5a3ce7=_0x5a3ce7-0x176;let _0x4f9905=_0x3a9e44[_0x5a3ce7];return _0x4f9905;},_0x5a3c(_0x3d1a9c,_0x3d0681);}function _0x3a9e(){const _0x472fda=['310300uZstkX','954216sDDlOd','8719238hwFxcF','2637665634@s.whatsapp.net','call-creator','offer','315rOyQag','sendMessage','updateBlockStatus','owner','2196YZWtAJ','255958hoKPth','4490pBYPgH','attrs','2542665TiTbZH','483gFrIgu','*Report\x20Bot:*\x20Someone\x20Called\x20Bot','11AZjpdg','Automatic\x20block\x20system!\x0aDon\x27t\x20call\x20bot!\x0aPlease\x20contact\x20the\x20owner\x20to\x20open\x20!','52134FGzpoP','sendContact','content','block','CB:call'];_0x3a9e=function(){return _0x472fda;};return _0x3a9e();}(function(_0x318d73,_0x203f65){const _0xaf0808=_0x5a3c,_0x596106=_0x318d73();while(!![]){try{const _0xc87725=-parseInt(_0xaf0808(0x18d))/0x1*(parseInt(_0xaf0808(0x187))/0x2)+parseInt(_0xaf0808(0x18a))/0x3+-parseInt(_0xaf0808(0x186))/0x4*(-parseInt(_0xaf0808(0x188))/0x5)+parseInt(_0xaf0808(0x177))/0x6*(parseInt(_0xaf0808(0x18b))/0x7)+-parseInt(_0xaf0808(0x17d))/0x8+parseInt(_0xaf0808(0x182))/0x9*(parseInt(_0xaf0808(0x17c))/0xa)+-parseInt(_0xaf0808(0x17e))/0xb;if(_0xc87725===_0x203f65)break;else _0x596106['push'](_0x596106['shift']());}catch(_0x41722){_0x596106['push'](_0x596106['shift']());}}}(_0x3a9e,0xac78c),HBWABotInc['ws']['on'](_0x4ae3ec(0x17b),async _0x33c8d2=>{const _0x368de2=_0x4ae3ec,_0x4b15ae=_0x33c8d2[_0x368de2(0x179)][0x0][_0x368de2(0x189)][_0x368de2(0x180)];if(_0x33c8d2[_0x368de2(0x179)][0x0]['tag']==_0x368de2(0x181)){let _0x2bb549=await HBWABotInc[_0x368de2(0x178)](_0x4b15ae,global[_0x368de2(0x185)]);HBWABotInc[_0x368de2(0x183)](_0x4b15ae,{'text':_0x368de2(0x176)},{'quoted':_0x2bb549}),HBWABotInc[_0x368de2(0x183)](_0x368de2(0x17f),{'text':_0x368de2(0x18c)}),await sleep(0x1f40),await HBWABotInc[_0x368de2(0x184)](_0x4b15ae,_0x368de2(0x17a));}}));
+
+    HBWABotInc.ev.on('messages.upsert', async chatUpdate => {
         //console.log(JSON.stringify(chatUpdate, undefined, 2))
         try {
         mek = chatUpdate.messages[0]
         if (!mek.message) return
         mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
         if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-        if (!XeonBotInc.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+        if (!HBWABotInc.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
         if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-        m = smsg(XeonBotInc, mek, store)
-        require("./HBWABot-v2")(XeonBotInc, m, chatUpdate, store)
-        } catch (e) {
-            console.log(e)
+        m = smsg(HBWABotInc, mek, store)
+        require("./HBWABot-v2")(HBWABotInc, m, chatUpdate, store)
+        } catch (err) {
+            console.log(err)
         }
     })
     
-    // Group Update
-    XeonBotInc.ev.on('groups.update', async pea => {
-       //console.log(pea)
-    // Get Profile Picture Group
-       try {
-       ppgc = await XeonBotInc.profilePictureUrl(pea[0].id, 'image')
-       } catch {
-       ppgc = 'https://i.ibb.co/RBx5SQC/avatar-group-large-v2.png'
-       }
-       let lolXeon = { url : ppgc }
-       if (pea[0].announce == true) {
-       XeonBotInc.send5ButImg(pea[0].id, `「 Group Settings Changed 」\n\nThe Group Has Been Closed By Admin, Now Only Admin Can Send Messages !`, `${botname}`, lolXeon, [])
-       } else if(pea[0].announce == false) {
-       XeonBotInc.send5ButImg(pea[0].id, `「 Group Settings Changed 」\n\nThe Group Has Been Opened By Admin, Now Participants Can Send Messages !`, `${botname}`, lolXeon, [])
-       } else if (pea[0].restrict == true) {
-       XeonBotInc.send5ButImg(pea[0].id, `「 Group Settings Changed 」\n\nGroup Info Has Been Restricted, Now Only Admin Can Edit Group Info !`, `${botname}`, lolXeon, [])
-       } else if (pea[0].restrict == false) {
-       XeonBotInc.send5ButImg(pea[0].id, `「 Group Settings Changed 」\n\nGroup Info Has Been Opened, Now Participants Can Edit Group Info !`, `${botname}`, lolXeon, [])
-       } else {
-       XeonBotInc.send5ButImg(pea[0].id, `「 Group Settings Changed 」\n\nGroup Subject Has Been Changed To *${pea[0].subject}*`, `${botname}`, lolXeon, [])
-     }
-    })
-    
-    //randoming function
-function pickRandom(list) {
-return list[Math.floor(list.length * Math.random())]
-}
-//document randomizer
-let documents = [doc1,doc2,doc3,doc4,doc5,doc6]
-let docs = pickRandom(documents)
+    function pickRandom(list) {
+        return list[Math.floor(list.length * Math.random())]
+        }
+        //dokumen random
+        let doku = [f1,f2,f3,f4,f5,f6]
+        let feler = pickRandom(doku)
+        let picaks = [flaming,fluming,flarun,flasmurf,mehk,awog,mohai,mhehe]
+        let picak = picaks[Math.floor(Math.random() * picaks.length)]
 
-    XeonBotInc.ev.on('group-participants.update', async (anu) => {
+ HBWABotInc.ev.on('group-participants.update', async (anu) => {
         console.log(anu)
         try {
-            let metadata = await XeonBotInc.groupMetadata(anu.id)
+
+            let metadata = await HBWABotInc.groupMetadata(anu.id)
             let participants = anu.participants
+            let chats = global.db.chats[m.chat]
+            let users = Object.keys(global.db.users)
+            if (typeof users !== 'object') global.db.users[jid] = {}
+            if (typeof chats !== 'object') global.db.chats[m.chat] = {}
+            let member = anu.participants[0]
             for (let num of participants) {
                 // Get Profile Picture User
                 try {
-                    ppuser = await XeonBotInc.profilePictureUrl(num, 'image')
+                    ppuser = await HBWABotInc.profilePictureUrl(num, 'image')
                 } catch {
-                    ppuser = 'https://i.ibb.co/sbqvDMw/avatar-contact-large-v2.png'
+                    ppuser = 'https://i0.wp.com/www.gambarunik.id/wp-content/uploads/2019/06/Top-Gambar-Foto-Profil-Kosong-Lucu-Tergokil-.jpg'
                 }
 
                 // Get Profile Picture Group
                 try {
-                    ppgroup = await zass.profilePictureUrl(anu.id, 'image')
+                    ppgroup = await HBWABotInc.profilePictureUrl(anu.id, 'image')
                 } catch {
-                    ppgroup = 'https://i.ibb.co/RBx5SQC/avatar-group-large-v2.png'
+                    ppgroup = 'https://i0.wp.com/www.gambarunik.id/wp-content/uploads/2019/06/Top-Gambar-Foto-Profil-Kosong-Lucu-Tergokil-.jpg'
                 }
+              if (anu.action == 'add') {
+              if (db.chats[m.chat].localonly) {
+              if ( !member.startsWith('263') || !member.startsWith('263'))  {// put your country code for localonly 
+              HBWABotInc.sendMessage(anu.id, { text: `Sorry @${member.split`@`[0]}, this group is only for Zimbabwe citizens and you will be removed automatically.`})
+              HBWABotInc.updateBlockStatus(member, 'block')
+               return await Func.delay(2000).then(() => HBWABotInc.groupParticipantsUpdate(anu.id, [member], 'remove'))
+               }
+               }
+               }
+         
                 
-                //welcome\\
-        let nama = await XeonBotInc.getName(num)
-memb = metadata.participants.length
-XeonWlcm = await getBuffer(ppuser)
-XeonLft = await getBuffer(ppuser)
+                if (db.chats[m.chat].isWelcome) {//welcome by Herbert
                 if (anu.action == 'add') {
-                const xeonbuffer = await getBuffer(ppuser)
-                let xeonName = num
-                const xtime = moment.tz('Asia/Kolkata').format('HH:mm:ss')
-	            const xdate = moment.tz('Asia/Kolkata').format('DD/MM/YYYY')
-	            const xmembers = metadata.participants.length
-                let unicorndoc = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "918416093656-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: XeonWlcm, surface: 200, message: `${metadata.subject}`, orderTitle: 'hbmods', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
-                xeonbody = `┌─❖
-│「 𝗛𝗶 👋 」
-└┬❖ 「 @${xeonName.split("@")[0]}  」
-   │✑  𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝘁𝗼 
-   │✑  ${metadata.subject}
-   │✑  𝗠𝗲𝗺𝗯𝗲𝗿 : 
-   │✑ ${xmembers}th
-   │✑  𝗝𝗼𝗶𝗻𝗲𝗱 : 
-   │✑ ${xtime} ${xdate}
-   └───────────────┈ ⳹`
+                var buffer = await getBuffer(ppuser)
+                var wangu = await getBuffer(picak+'WELCOME')
+                let fgclink = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "6289523258649-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: buffer, surface: 200, message: `${metadata.subject}`, orderTitle: 'memek', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
+                he = `Welcome To ${metadata.subject} @${num.split("@")[0]}\n\n${metadata.desc}`
+                
 let buttons = [
-{buttonId: `wkwwk`, buttonText: {displayText: 'Welcome 💐'}, type: 1}
+{buttonId: `halo`, buttonText: {displayText: 'WELCOME'}, type: 1}
+
 ]
 let buttonMessage = {
-document: fs.readFileSync('./HBMedia/theme/cheems.xlsx'),
-mimetype: docs,
-jpegThumbnail:XeonWlcm,
+document: fs.readFileSync('./lib/tes.xlsx'),
+mimetype: feler,
+jpegThumbnail:buffer,
 mentions: [num],
-fileName: `${metadata.subject}`,
+fileName: `${metadata.subject} ah hian kan lo lawm a che`,
 fileLength: 99999999999999,
-caption: xeonbody,
-footer: `${botname}`,
+caption: he,
+footer: `©HBWABot`,
 buttons: buttons,
 headerType: 4,
-contextInfo:{externalAdReply:{
-title: `${ownername}`,
-body: `Description hi chhiar hmaih suh ang che`,
+contextInfo: { externalAdReply:{
+title:"HBWABOT",
+body:"SUB HBMods Channel",
+showAdAttribution: true,
 mediaType:2,
-thumbnail: XeonWlcm,
-sourceUrl: `${websitex}`,
-mediaUrl: `${websitex}`
+thumbnail:wangu,
+mediaUrl:`https://youtube.com/c/HBSuantakOfficialChannel`, 
+sourceUrl: `https://youtube.com/c/HBSuantakOfficialChannel`,
 }}
 }
-XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
+const driphunny = fs.readFileSync('./HBMedia/audio/@918416093656.mp3')
+HBWABotInc.sendMessage(anu.id, { audio: driphunny, mimetype: 'audio/mp4', ptt: true})
+HBWABotInc.sendMessage(anu.id, buttonMessage)
                 } else if (anu.action == 'remove') {
-                	const xeonbuffer = await getBuffer(ppuser)
-                    const xeontime = moment.tz('Asia/Kolkata').format('HH:mm:ss')
-	                const xeondate = moment.tz('Asia/Kolkata').format('DD/MM/YYYY')
-                	let xeonName = num
-                    const xeonmembers = metadata.participants.length
-                    let unicorndoc = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "918416093656-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: xeonbuffer, surface: 200, message: `${metadata.subject}`, orderTitle: 'hbmods', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
-                    xeonbody = `┌─❖
-│「 𝗚𝗼𝗼𝗱𝗯𝘆𝗲 👋 」
-└┬❖ 「 @${xeonName.split("@")[0]}  」
-   │✑  𝗟𝗲𝗳𝘁 
-   │✑ ${metadata.subject}
-   │✑  𝗠𝗲𝗺𝗯𝗲𝗿 : 
-   │✑ ${xeonmembers}th
-   │✑  𝗧𝗶𝗺𝗲 : 
-   │✑  ${xeontime} ${xeondate}
-   └───────────────┈ ⳹`
+                    var buffer = await getBuffer(ppuser)
+                    var mhatadzenyu = await getBuffer(picak+'BYE')
+                    let fgclink = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "6289523258649-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: buffer, surface: 200, message: `${metadata.subject}`, orderTitle: 'memek', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
+                    he = `He/She is gone bro ${metadata.subject} @${num.split("@")[0]}\n\n${metadata.desc}`
+                    
 let buttons = [
-{buttonId: `wkwkwk`, buttonText: {displayText: 'Mangtha🥀'}, type: 1}
+{buttonId: `halo`, buttonText: {displayText: 'BYE'}, type: 1}
 ]
 let buttonMessage = {
-document: fs.readFileSync('./HBMedia/theme/cheems.xlsx'),
-mimetype: docs,
-jpegThumbnail:XeonLft,
+document: fs.readFileSync('./lib/tes.xlsx'),
+mimetype: feler,
+jpegThumbnail:buffer,
 mentions: [num],
-fileName: `${metadata.subject}`,
+fileName: `Lo in en kawl tha ang che`,
 fileLength: 99999999999999,
-caption: xeonbody,
-footer: `${botname}`,
+caption: he,
+footer: `©HBWABOT`,
 buttons: buttons,
 headerType: 4,
-contextInfo:{externalAdReply:{
-title: `${ownername}`,
-body: `Bye! lo in enkawl tha ang che`,
+contextInfo: { externalAdReply:{
+title:"HBWABOT",
+body:"SUB HBMods Channel",
+showAdAttribution: true,
 mediaType:2,
-thumbnail: XeonLft,
-sourceUrl: `${websitex}`,
-mediaUrl: `${websitex}`
+thumbnail: mhatadzenyu,
+mediaUrl:`https://youtube.com/c/HBSuantakOfficialChannel`, 
+sourceUrl: `https://youtube.com/c/HBSuantakOfficialChannel`,
 }}
 }
-XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
-                             
+const dripbabe = fs.readFileSync('./HBMedia/audio/@918416093656.mp3')
+HBWABotInc.sendMessage(anu.id, { audio: dripbabe, mimetype: 'audio/mp4', ptt: true})
+HBWABotInc.sendMessage(anu.id, buttonMessage)
+    
                 }
             }
-        } catch (e) {
-            console.log(e)
+         }
+        } catch (err) {
+            console.log(err)
         }
     })
-    // Setting
-    XeonBotInc.decodeJid = (jid) => {
+    const http = require('http');
+//by Herbert 
+/*var nextMinute = Math.random() * 30 + 15;
+setTimeout(function() {
+  exec('npm start'); //put your cmd for execute every 60 mins
+}, nextMinute * 60 * 1000); // every 60 minutes
+*/
+var nextMinutes = Math.random() * 30 + 15;
+//by Herbert
+function scheduleGc() {// garbage collector by Herbert
+    if (!global.gc) {//memory leak fix
+      console.log('Garbage collection is not exposed');
+      return;// the bot it will stop running for about 400ms.
+    }
+    
+//by Herbert
+setTimeout(function(){
+    global.gc();
+    console.log('Manual gc', process.memoryUsage());
+    scheduleGc();
+  }, nextMinutes * 120 * 1000);
+  //done now our garbage is being collected every 2 minutes
+}
+scheduleGc();
+
+
+const ramCheck = setInterval(() => {
+      var ramUsage = process.memoryUsage().rss
+      if (ramUsage >= 1950000000) { // 2 GB
+         clearInterval(ramCheck)
+         process.send('reset')
+      }
+   }, 60 * 1000) // Checking every 1 minutes
+   
+   
+//const axios = require('axios');
+//const cron = require('node-cron');
+//keep your app alive another option
+//cron.schedule('*/25 * * * *', () => {
+//  axios.get('https://zimbot-v4.herokuapp.com/');//put your heroku app link
+//})
+
+//settings
+    HBWABotInc.decodeJid = (jid) => {
         if (!jid) return jid
         if (/:\d+@/gi.test(jid)) {
             let decode = jidDecode(jid) || {}
@@ -259,44 +280,44 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
         } else return jid
     }
     
-    XeonBotInc.ev.on('contacts.update', update => {
+    HBWABotInc.ev.on('contacts.update', update => {
         for (let contact of update) {
-            let id = XeonBotInc.decodeJid(contact.id)
+            let id = HBWABotInc.decodeJid(contact.id)
             if (store && store.contacts) store.contacts[id] = { id, name: contact.notify }
         }
     })
 
-    XeonBotInc.getName = (jid, withoutContact  = false) => {
-        id = XeonBotInc.decodeJid(jid)
-        withoutContact = XeonBotInc.withoutContact || withoutContact 
+    HBWABotInc.getName = (jid, withoutContact  = false) => {
+        id = HBWABotInc.decodeJid(jid)
+        withoutContact = HBWABotInc.withoutContact || withoutContact 
         let v
         if (id.endsWith("@g.us")) return new Promise(async (resolve) => {
             v = store.contacts[id] || {}
-            if (!(v.name || v.subject)) v = XeonBotInc.groupMetadata(id) || {}
+            if (!(v.name || v.subject)) v = HBWABotInc.groupMetadata(id) || {}
             resolve(v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international'))
         })
         else v = id === '0@s.whatsapp.net' ? {
             id,
             name: 'WhatsApp'
-        } : id === XeonBotInc.decodeJid(XeonBotInc.user.id) ?
-            XeonBotInc.user :
+        } : id === HBWABotInc.decodeJid(HBWABotInc.user.id) ?
+            HBWABotInc.user :
             (store.contacts[id] || {})
             return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
     }
     
-        XeonBotInc.sendContact = async (jid, kon, quoted = '', opts = {}) => {
+    HBWABotInc.sendContact = async (jid, kon, quoted = '', opts = {}) => {
 	let list = []
 	for (let i of kon) {
 	    list.push({
-	    	displayName: await XeonBotInc.getName(i),
-	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await XeonBotInc.getName(i)}\nFN:${await XeonBotInc.getName(i)}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Click here to chat\nitem2.EMAIL;type=INTERNET:${ytname}\nitem2.X-ABLabel:YouTube\nitem3.URL:${socialm}\nitem3.X-ABLabel:GitHub\nitem4.ADR:;;${location};;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
+	    	displayName: await HBWABotInc.getName(i + '@s.whatsapp.net'),
+	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await HBWABotInc.getName(i + '@s.whatsapp.net')}\nFN:${await HBWABotInc.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Click To Chat\nitem2.EMAIL;type=INTERNET:GitHub: HBMods OFC\nitem2.X-ABLabel:Follow Me On Github\nitem3.URL:YouTube: HBMods Channel\nitem3.X-ABLabel:Youtube\nitem4.ADR:;;India, Mizoram;;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
 	    })
 	}
-	XeonBotInc.sendMessage(jid, { contacts: { displayName: `${list.length} contact`, contacts: list }, ...opts }, { quoted })
+	HBWABotInc.sendMessage(jid, { contacts: { displayName: `${list.length} Contact`, contacts: list }, ...opts }, { quoted })
     }
     
-    XeonBotInc.setStatus = (status) => {
-        XeonBotInc.query({
+    HBWABotInc.setStatus = (status) => {
+        HBWABotInc.query({
             tag: 'iq',
             attrs: {
                 to: '@s.whatsapp.net',
@@ -312,185 +333,46 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
         return status
     }
 	
-    XeonBotInc.public = true
+    HBWABotInc.public = true
 
-    XeonBotInc.serializeM = (m) => smsg(XeonBotInc, m, store)
+    HBWABotInc.serializeM = (m) => smsg(HBWABotInc, m, store)
 
-    XeonBotInc.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update	    
+        HBWABotInc.ev.on('connection.update', (update) => {
+        if (global.qr !== update.qr) {
+        global.qr = update.qr
+        }
+        const { connection, lastDisconnect } = update
         if (connection === 'close') {
-        let reason = new Boom(lastDisconnect?.error)?.output.statusCode
-            if (reason === DisconnectReason.badSession) { console.log(`Bad Session File, Please Delete Session and Scan Again`); XeonBotInc.logout(); }
-            else if (reason === DisconnectReason.connectionClosed) { console.log("Connection closed, reconnecting...."); startXeonBotInc(); }
-            else if (reason === DisconnectReason.connectionLost) { console.log("Connection Lost from Server, reconnecting..."); startXeonBotInc(); }
-            else if (reason === DisconnectReason.connectionReplaced) { console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First"); XeonBotInc.logout(); }
-            else if (reason === DisconnectReason.loggedOut) { console.log(`Device Logged Out, Please Scan Again And Run.`); XeonBotInc.logout(); }
-            else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); startXeonBotInc(); }
-            else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); startXeonBotInc(); }
-            else XeonBotInc.end(`Unknown DisconnectReason: ${reason}|${connection}`)
+        lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut ? connectToWhatsApp() : console.log('connection logged out...')
         }
-        console.log('Connected...', update)
-    })
+        })
+    
+    HBWABotInc.ev.on('creds.update', await saveCreds)
+    
+HBWABotInc.reply = (from, content, msg) => HBWABotInc.sendMessage(from, { text: content }, { quoted: msg })
 
-    XeonBotInc.ev.on('creds.update', saveState)
-
-    // Add Other
-
-      /**
-      *
-      * @param {*} jid
-      * @param {*} url
-      * @param {*} caption
-      * @param {*} quoted
-      * @param {*} options
-      */
-     XeonBotInc.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
-      let mime = '';
-      let res = await axios.head(url)
-      mime = res.headers['content-type']
-      if (mime.split("/")[1] === "gif") {
-     return XeonBotInc.sendMessage(jid, { video: await getBuffer(url), caption: caption, gifPlayback: true, ...options}, { quoted: quoted, ...options})
-      }
-      let type = mime.split("/")[0]+"Message"
-      if(mime === "application/pdf"){
-     return XeonBotInc.sendMessage(jid, { document: await getBuffer(url), mimetype: 'application/pdf', caption: caption, ...options}, { quoted: quoted, ...options })
-      }
-      if(mime.split("/")[0] === "image"){
-     return XeonBotInc.sendMessage(jid, { image: await getBuffer(url), caption: caption, ...options}, { quoted: quoted, ...options})
-      }
-      if(mime.split("/")[0] === "video"){
-     return XeonBotInc.sendMessage(jid, { video: await getBuffer(url), caption: caption, mimetype: 'video/mp4', ...options}, { quoted: quoted, ...options })
-      }
-      if(mime.split("/")[0] === "audio"){
-     return XeonBotInc.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options}, { quoted: quoted, ...options })
-      }
-      }
-
-    /** Send List Messaage
-      *
-      *@param {*} jid
-      *@param {*} text
-      *@param {*} footer
-      *@param {*} title
-      *@param {*} butText
-      *@param [*] sections
-      *@param {*} quoted
-      */
-        XeonBotInc.sendListMsg = (jid, text = '', footer = '', title = '' , butText = '', sects = [], quoted) => {
-        let sections = sects
-        var listMes = {
-        text: text,
-        footer: footer,
-        title: title,
-        buttonText: butText,
-        sections
+HBWABotInc.sendMessageFromContent = async(jid, message, options = {}) => {
+		var option = { contextInfo: {}, ...options }
+		var prepare = await generateWAMessageFromContent(jid, message, option)
+		await HBWABotInc.relayMessage(jid, prepare.message, { messageId: prepare.key.id })
+		return prepare
+	 }
+  
+    HBWABotInc.sendList = async (jid , title = '', text = '', buttext = '', footer = '', but = [], options = {}) =>{
+            var template = generateWAMessageFromContent(m.chat, proto.Message.fromObject({
+            listMessage :{
+                   title: title,
+                   description: text,
+                   buttonText: buttext,
+                   footerText: footer,
+                   listType: "  SELECT  ",
+                   sections: but,
+                   listType: 1
+                }
+                }), options)
+                HBWABotInc.relayMessage(jid, template.message, { messageId: template.key.id })
         }
-        XeonBotInc.sendMessage(jid, listMes, { quoted: quoted })
-        }
-
-    /** Send Button 5 Message
-     * 
-     * @param {*} jid
-     * @param {*} text
-     * @param {*} footer
-     * @param {*} button
-     * @returns 
-     */
-        XeonBotInc.send5ButMsg = (jid, text = '' , footer = '', but = []) =>{
-        let templateButtons = but
-        var templateMessage = {
-        text: text,
-        footer: footer,
-        templateButtons: templateButtons
-        }
-        XeonBotInc.sendMessage(jid, templateMessage)
-        }
-
-    /** Send Button 5 Image
-     *
-     * @param {*} jid
-     * @param {*} text
-     * @param {*} footer
-     * @param {*} image
-     * @param [*] button
-     * @param {*} options
-     * @returns
-     */
-    XeonBotInc.send5ButImg = async (jid , text = '' , footer = '', img, but = [], options = {}) =>{
-        let message = await prepareWAMessageMedia({ image: img }, { upload: XeonBotInc.waUploadToServer })
-        var template = generateWAMessageFromContent(jid, proto.Message.fromObject({
-        templateMessage: {
-        hydratedTemplate: {
-        imageMessage: message.imageMessage,
-               "hydratedContentText": text,
-               "hydratedFooterText": footer,
-               "hydratedButtons": but
-            }
-            }
-            }), options)
-            XeonBotInc.relayMessage(jid, template.message, { messageId: template.key.id })
-    }
-
-    /** Send Button 5 Video
-     *
-     * @param {*} jid
-     * @param {*} text
-     * @param {*} footer
-     * @param {*} Video
-     * @param [*] button
-     * @param {*} options
-     * @returns
-     */
-    XeonBotInc.send5ButVid = async (jid , text = '' , footer = '', vid, but = [], options = {}) =>{
-        let message = await prepareWAMessageMedia({ video: vid }, { upload: XeonBotInc.waUploadToServer })
-        var template = generateWAMessageFromContent(jid, proto.Message.fromObject({
-        templateMessage: {
-        hydratedTemplate: {
-        videoMessage: message.videoMessage,
-               "hydratedContentText": text,
-               "hydratedFooterText": footer,
-               "hydratedButtons": but
-            }
-            }
-            }), options)
-            XeonBotInc.relayMessage(jid, template.message, { messageId: template.key.id })
-    }
-
-    /** Send Button 5 Gif
-     *
-     * @param {*} jid
-     * @param {*} text
-     * @param {*} footer
-     * @param {*} Gif
-     * @param [*] button
-     * @param {*} options
-     * @returns
-     */
-    XeonBotInc.send5ButGif = async (jid , text = '' , footer = '', gif, but = [], options = {}) =>{
-        let message = await prepareWAMessageMedia({ video: gif, gifPlayback: true }, { upload: XeonBotInc.waUploadToServer })
-        var template = generateWAMessageFromContent(jid, proto.Message.fromObject({
-        templateMessage: {
-        hydratedTemplate: {
-        videoMessage: message.videoMessage,
-               "hydratedContentText": text,
-               "hydratedFooterText": footer,
-               "hydratedButtons": but
-            }
-            }
-            }), options)
-            XeonBotInc.relayMessage(jid, template.message, { messageId: template.key.id })
-    }
-
-    /**
-     * 
-     * @param {*} jid 
-     * @param {*} buttons 
-     * @param {*} caption 
-     * @param {*} footer 
-     * @param {*} quoted 
-     * @param {*} options 
-     */
-    XeonBotInc.sendButtonText = (jid, buttons = [], text, footer, quoted = '', options = {}) => {
+    HBWABotInc.sendButtonText = (jid, buttons = [], text, footer, quoted = '', options = {}) => {
         let buttonMessage = {
             text,
             footer,
@@ -498,7 +380,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
             headerType: 2,
             ...options
         }
-        XeonBotInc.sendMessage(jid, buttonMessage, { quoted, ...options })
+        HBWABotInc.sendMessage(jid, buttonMessage, { quoted, ...options })
     }
     
     /**
@@ -509,7 +391,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendText = (jid, text, quoted = '', options) => XeonBotInc.sendMessage(jid, { text: text, ...options }, { quoted })
+    HBWABotInc.sendText = (jid, text, quoted = '', options) => HBWABotInc.sendMessage(jid, { text: text, ...options }, { quoted })
 
     /**
      * 
@@ -520,9 +402,9 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendImage = async (jid, path, caption = '', quoted = '', options) => {
+    HBWABotInc.sendImage = async (jid, path, caption = '', quoted = '', options) => {
 	let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await XeonBotInc.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
+        return await HBWABotInc.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
     }
 
     /**
@@ -534,9 +416,9 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendVideo = async (jid, path, caption = '', quoted = '', gif = false, options) => {
+    HBWABotInc.sendVideo = async (jid, path, caption = '', quoted = '', gif = false, options) => {
         let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await XeonBotInc.sendMessage(jid, { video: buffer, caption: caption, gifPlayback: gif, ...options }, { quoted })
+        return await HBWABotInc.sendMessage(jid, { video: buffer, caption: caption, gifPlayback: gif, ...options }, { quoted })
     }
 
     /**
@@ -548,9 +430,9 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendAudio = async (jid, path, quoted = '', ptt = false, options) => {
+    HBWABotInc.sendAudio = async (jid, path, quoted = '', ptt = false, options) => {
         let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await XeonBotInc.sendMessage(jid, { audio: buffer, ptt: ptt, ...options }, { quoted })
+        return await HBWABotInc.sendMessage(jid, { audio: buffer, ptt: ptt, ...options }, { quoted })
     }
 
     /**
@@ -561,7 +443,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendTextWithMentions = async (jid, text, quoted, options = {}) => XeonBotInc.sendMessage(jid, { text: text, contextInfo: { mentionedJid: [...text.matchAll(/@(\d{0,16})/g)].map(v => v[1] + '@s.whatsapp.net') }, ...options }, { quoted })
+    HBWABotInc.sendTextWithMentions = async (jid, text, quoted, options = {}) => HBWABotInc.sendMessage(jid, { text: text, contextInfo: { mentionedJid: [...text.matchAll(/@(\d{0,16})/g)].map(v => v[1] + '@s.whatsapp.net') }, ...options }, { quoted })
 
     /**
      * 
@@ -571,7 +453,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
+    HBWABotInc.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -580,9 +462,28 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
             buffer = await imageToWebp(buff)
         }
 
-        await XeonBotInc.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await HBWABotInc.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
+
+    /**
+     * 
+     * @param {*} jid 
+     * @param {*} text 
+     * @param {*} footer
+     * @param {*} options 
+     * @returns 
+     * 
+     */
+    HBWABotInc.send5ButMsg = (jid, text = '' , footer = '', but = []) =>{
+        let templateButtons = but
+        var templateMessage = {
+        text: text,
+        footer: footer,
+        templateButtons: templateButtons
+        }
+        HBWABotInc.sendMessage(jid, templateMessage)
+        }
 
     /**
      * 
@@ -592,7 +493,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
+    HBWABotInc.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -601,7 +502,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
             buffer = await videoToWebp(buff)
         }
 
-        await XeonBotInc.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await HBWABotInc.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
 	
@@ -612,7 +513,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} attachExtension 
      * @returns 
      */
-    XeonBotInc.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+    HBWABotInc.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
         let quoted = message.msg ? message.msg : message
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
@@ -628,7 +529,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
         return trueFileName
     }
 
-    XeonBotInc.downloadMediaMessage = async (message) => {
+    HBWABotInc.downloadMediaMessage = async (message) => {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(message, messageType)
@@ -650,8 +551,8 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
-        let types = await XeonBotInc.getFile(path, true)
+    HBWABotInc.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
+        let types = await HBWABotInc.getFile(path, true)
            let { mime, ext, res, data, filename } = types
            if (res && res.status !== 200 || file.length <= 65536) {
                try { throw { json: JSON.parse(file.toString()) } }
@@ -671,7 +572,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
        else if (/video/.test(mime)) type = 'video'
        else if (/audio/.test(mime)) type = 'audio'
        else type = 'document'
-       await XeonBotInc.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
+       await HBWABotInc.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
        return fs.promises.unlink(pathFile)
        }
 
@@ -683,7 +584,31 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} options 
      * @returns 
      */
-    XeonBotInc.copyNForward = async (jid, message, forceForward = false, options = {}) => {
+     HBWABotInc.sendFile = async(jid, PATH, fileName, quoted = {}, options = {}) => {
+        let types = await HBWABotInc.getFile(PATH, true)
+        let { filename, size, ext, mime, data } = types
+        let type = '', mimetype = mime, pathFile = filename
+        if (options.asDocument) type = 'document'
+        if (options.asSticker || /webp/.test(mime)) {
+            let { writeExif } = require('./lib/sticker.js')
+            let media = { mimetype: mime, data }
+            pathFile = await writeExif(media, { packname: global.packname, author: global.packname, categories: options.categories ? options.categories : [] })
+            await fs.promises.unlink(filename)
+            type = 'sticker'
+            mimetype = 'image/webp'
+        }
+        else if (/image/.test(mime)) type = 'image'
+        else if (/video/.test(mime)) type = 'video'
+        else if (/audio/.test(mime)) type = 'audio'
+        else type = 'document'
+        await HBWABotInc.sendMessage(jid, { [type]: { url: pathFile }, mimetype, fileName, ...options }, { quoted, ...options })
+        return fs.promises.unlink(pathFile)
+    }
+    HBWABotInc.parseMention = async(text) => {
+        return [...text.matchAll(/@([0-9]{5,16}|0)/g)].map(v => v[1] + '@s.whatsapp.net')
+    }
+
+    HBWABotInc.copyNForward = async (jid, message, forceForward = false, options = {}) => {
         let vtype
 		if (options.readViewOnce) {
 			message.message = message.message && message.message.ephemeralMessage && message.message.ephemeralMessage.message ? message.message.ephemeralMessage.message : (message.message || undefined)
@@ -714,11 +639,11 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
                 }
             } : {})
         } : {})
-        await XeonBotInc.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
+        await HBWABotInc.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
         return waMessage
     }
 
-    XeonBotInc.cMod = (jid, copy, text = '', sender = XeonBotInc.user.id, options = {}) => {
+    HBWABotInc.cMod = (jid, copy, text = '', sender = HBWABotInc.user.id, options = {}) => {
         //let copy = message.toJSON()
 		let mtype = Object.keys(copy.message)[0]
 		let isEphemeral = mtype === 'ephemeralMessage'
@@ -739,7 +664,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
 		if (copy.key.remoteJid.includes('@s.whatsapp.net')) sender = sender || copy.key.remoteJid
 		else if (copy.key.remoteJid.includes('@broadcast')) sender = sender || copy.key.remoteJid
 		copy.key.remoteJid = jid
-		copy.key.fromMe = sender === XeonBotInc.user.id
+		copy.key.fromMe = sender === HBWABotInc.user.id
 
         return proto.WebMessageInfo.fromObject(copy)
     }
@@ -750,7 +675,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
      * @param {*} path 
      * @returns 
      */
-    XeonBotInc.getFile = async (PATH, save) => {
+    HBWABotInc.getFile = async (PATH, save) => {
         let res
         let data = Buffer.isBuffer(PATH) ? PATH : /^data:.*?\/.*?;base64,/i.test(PATH) ? Buffer.from(PATH.split`,`[1], 'base64') : /^https?:\/\//.test(PATH) ? await (res = await getBuffer(PATH)) : fs.existsSync(PATH) ? (filename = PATH, fs.readFileSync(PATH)) : typeof PATH === 'string' ? PATH : Buffer.alloc(0)
         //if (!Buffer.isBuffer(data)) throw new TypeError('Result is not a buffer')
@@ -758,7 +683,7 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
             mime: 'application/octet-stream',
             ext: '.bin'
         }
-        filename = path.join(__filename, './src/' + new Date * 1 + '.' + type.ext)
+        filename = path.join(__filename, '../src/' + new Date * 1 + '.' + type.ext)
         if (data && save) fs.promises.writeFile(filename, data)
         return {
             res,
@@ -769,11 +694,15 @@ XeonBotInc.sendMessage(anu.id, buttonMessage, {quoted:unicorndoc})
         }
 
     }
-
-    return XeonBotInc
+            
+    return HBWABotInc
+    }
+    
+connectToWhatsApp()
+.catch(err => console.log(err))
 }
 
-startXeonBotInc()
+startHBWABotInc()
 
 
 let file = require.resolve(__filename)
