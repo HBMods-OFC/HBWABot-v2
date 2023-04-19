@@ -1,4 +1,3 @@
-//Script by Herbert
 require('./settings')
 const { default: HBWABotIncConnect, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto , delay} = require("@adiwajshing/baileys")
 const pino = require('pino')
@@ -16,13 +15,13 @@ const  { Boom } = require('@hapi/boom')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
-const Herbert = require('drips-memes')
+const Drips = require('drips-memes')
 
 global.api = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({ ...query, ...(apikeyqueryname ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {}) })) : '')
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 const { say } =  require('cfonts')
 const { color } = require('./lib/color')
-say('HBWABot\nV2.9', {
+say('HBWABot', {
     font: '3d',
     colors: ["#0ff",'green',"#ff0"],
     align: 'center',
@@ -39,18 +38,18 @@ say('HBWABot\nV2.9', {
     align: 'center',
     gradient: ['red', 'green']
   })
-Herbert.hr();
-console.log(color(''), color('THANKS FOR CHOOSING HBWABOT', 'green'))
-console.log(color(''), color('SCRIPT BY HBMODS', 'red'))
-console.log(color( ''), color('https://wa.me/918416093656','cyan'))
-Herbert.hr();
-Herbert.banner(`HBMods HBWABOT OWNER`)
-Herbert.ok('WELCOME TO HBMods')
-Herbert.done('I WROTE THIS SCRIPT BY MYSELF')
-Herbert.info('YOU WANNA CONTRUBUTE FEEL FREE TO CONTACT ME, BEING FRIENDLY IS MY LANGUAGE')
-Herbert.error('')
-Herbert.time('')
-Herbert.hr();
+Drips.hr();
+console.log(color(''), color('THANKS FOR CHOOSING HBWABot', 'green'))
+console.log(color(''), color('SCRIPT BY HBMods', 'red'))
+console.log(color( ''), color('https://wa.me/+918416093656','cyan'))
+Drips.hr();
+Drips.banner(`HBMods HBWABOT OWNER`)
+Drips.ok('WELCOME TO HBWABOT')
+Drips.done('I WROTE THIS SCRIPT BY MYSELF')
+Drips.info('YOU WANNA CONTRUBUTE FEEL FREE TO CONTACT ME, BEING FRIENDLY IS MY LANGUAGE')
+Drips.error('')
+Drips.time('')
+Drips.hr();
 
 async function startHBWABotInc() {
     const connectToWhatsApp = async () => {
@@ -128,123 +127,51 @@ async function startHBWABotInc() {
             if (typeof users !== 'object') global.db.users[jid] = {}
             if (typeof chats !== 'object') global.db.chats[m.chat] = {}
             let member = anu.participants[0]
-            for (let num of participants) {
-                // Get Profile Picture User
+            for (let num of participants)  // Get Profile Picture User
                 try {
                     ppuser = await HBWABotInc.profilePictureUrl(num, 'image')
                 } catch {
                     ppuser = 'https://i0.wp.com/www.gambarunik.id/wp-content/uploads/2019/06/Top-Gambar-Foto-Profil-Kosong-Lucu-Tergokil-.jpg'
                 }
 
-                // Get Profile Picture Group
+                //Get Profile Picture Group\\
                 try {
                     ppgroup = await HBWABotInc.profilePictureUrl(anu.id, 'image')
                 } catch {
                     ppgroup = 'https://i0.wp.com/www.gambarunik.id/wp-content/uploads/2019/06/Top-Gambar-Foto-Profil-Kosong-Lucu-Tergokil-.jpg'
                 }
-              if (anu.action == 'add') {
-              if (db.chats[m.chat].localonly) {
-              if ( !member.startsWith('263') || !member.startsWith('263'))  {// put your country code for localonly 
-              HBWABotInc.sendMessage(anu.id, { text: `Sorry @${member.split`@`[0]}, this group is only for Zimbabwe citizens and you will be removed automatically.`})
-              HBWABotInc.updateBlockStatus(member, 'block')
-               return await Func.delay(2000).then(() => HBWABotInc.groupParticipantsUpdate(anu.id, [member], 'remove'))
-               }
-               }
-               }
-         
-                
-                if (db.chats[m.chat].isWelcome) {//welcome by Herbert
-                if (anu.action == 'add') {
-                var buffer = await getBuffer(ppuser)
-                var wangu = await getBuffer(picak+'WELCOME')
-                let fgclink = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "6289523258649-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: buffer, surface: 200, message: `${metadata.subject}`, orderTitle: 'memek', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
-                he = `Welcome To ${metadata.subject} @${num.split("@")[0]}\n\n${metadata.desc}`
-                
-let buttons = [
-{buttonId: `halo`, buttonText: {displayText: 'WELCOME'}, type: 1}
 
-]
-let buttonMessage = {
-document: fs.readFileSync('./lib/tes.xlsx'),
-mimetype: feler,
-jpegThumbnail:buffer,
-mentions: [num],
-fileName: `${metadata.subject} ah hian kan lo lawm a che`,
-fileLength: 99999999999999,
-caption: he,
-footer: `©HBWABot`,
-buttons: buttons,
-headerType: 4,
-contextInfo: { externalAdReply:{
-title:"HBWABOT",
-body:"SUB HBMods Channel",
-showAdAttribution: true,
-mediaType:2,
-thumbnail:wangu,
-mediaUrl:`https://youtube.com/c/HBSuantakOfficialChannel`, 
-sourceUrl: `https://youtube.com/c/HBSuantakOfficialChannel`,
-}}
-}
-const driphunny = fs.readFileSync('./HBMedia/audio/@918416093656.mp3')
-HBWABotInc.sendMessage(anu.id, { audio: driphunny, mimetype: 'audio/mp4', ptt: true})
-HBWABotInc.sendMessage(anu.id, buttonMessage)
-                } else if (anu.action == 'remove') {
-                    var buffer = await getBuffer(ppuser)
-                    var mhatadzenyu = await getBuffer(picak+'BYE')
-                    let fgclink = {key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "6289523258649-1604595598@g.us"}, "message": {orderMessage: {itemCount: 9999999,status: 200, thumbnail: buffer, surface: 200, message: `${metadata.subject}`, orderTitle: 'memek', sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
-                    he = `He/She is gone bro ${metadata.subject} @${num.split("@")[0]}\n\n${metadata.desc}`
-                    
-let buttons = [
-{buttonId: `halo`, buttonText: {displayText: 'BYE'}, type: 1}
-]
-let buttonMessage = {
-document: fs.readFileSync('./lib/tes.xlsx'),
-mimetype: feler,
-jpegThumbnail:buffer,
-mentions: [num],
-fileName: `Lo in en kawl tha ang che`,
-fileLength: 99999999999999,
-caption: he,
-footer: `©HBWABOT`,
-buttons: buttons,
-headerType: 4,
-contextInfo: { externalAdReply:{
-title:"HBWABOT",
-body:"SUB HBMods Channel",
-showAdAttribution: true,
-mediaType:2,
-thumbnail: mhatadzenyu,
-mediaUrl:`https://youtube.com/c/HBSuantakOfficialChannel`, 
-sourceUrl: `https://youtube.com/c/HBSuantakOfficialChannel`,
-}}
-}
-const dripbabe = fs.readFileSync('./HBMedia/audio/@918416093656.mp3')
-HBWABotInc.sendMessage(anu.id, { audio: dripbabe, mimetype: 'audio/mp4', ptt: true})
-HBWABotInc.sendMessage(anu.id, buttonMessage)
-    
+//welcome\\
+        let nama = await HBWABotInc.getName(num)
+memb = metadata.participants.length
+
+Kon = await getBuffer(`https://hardianto.xyz/api/welcome3?profile=${encodeURIComponent(ppuser)}&name=${encodeURIComponent(nama)}&bg=https://telegra.ph/file/8bbe8a7de5c351dfcb077.jpg&namegb=${encodeURIComponent(metadata.subject)}&member=${encodeURIComponent(memb)}`)
+
+Tol = await getBuffer(`https://hardianto.xyz/api/goodbye3?profile=${encodeURIComponent(ppuser)}&name=${encodeURIComponent(nama)}&bg=https://telegra.ph/file/8bbe8a7de5c351dfcb077.jpg&namegb=${encodeURIComponent(metadata.subject)}&member=${encodeURIComponent(memb)}`)
+                if (anu.action == 'add') {
+                    HBWABotInc.sendMessage(anu.id, { image: Kon, contextInfo: { mentionedJid: [num] }, caption: `Hi @${num.split("@")[0]}, Kan group-ah hian kan lo lawm a che` })
                 }
             }
-         }
         } catch (err) {
             console.log(err)
         }
     })
-    const http = require('http');
-//by Herbert 
+       const http = require('http');
+//by drips 
 /*var nextMinute = Math.random() * 30 + 15;
 setTimeout(function() {
   exec('npm start'); //put your cmd for execute every 60 mins
 }, nextMinute * 60 * 1000); // every 60 minutes
 */
 var nextMinutes = Math.random() * 30 + 15;
-//by Herbert
-function scheduleGc() {// garbage collector by Herbert
+//by drips
+function scheduleGc() {// garbage collector by drips
     if (!global.gc) {//memory leak fix
       console.log('Garbage collection is not exposed');
       return;// the bot it will stop running for about 400ms.
     }
     
-//by Herbert
+//by drips
 setTimeout(function(){
     global.gc();
     console.log('Manual gc', process.memoryUsage());
@@ -310,7 +237,7 @@ const ramCheck = setInterval(() => {
 	for (let i of kon) {
 	    list.push({
 	    	displayName: await HBWABotInc.getName(i + '@s.whatsapp.net'),
-	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await HBWABotInc.getName(i + '@s.whatsapp.net')}\nFN:${await HBWABotInc.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Click To Chat\nitem2.EMAIL;type=INTERNET:GitHub: HBMods OFC\nitem2.X-ABLabel:Follow Me On Github\nitem3.URL:YouTube: HBMods Channel\nitem3.X-ABLabel:Youtube\nitem4.ADR:;;India, Mizoram;;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
+	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${ownername}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Click To Chat\nitem2.EMAIL;type=INTERNET:${ytname}\nitem2.X-ABLabel:YouTube\nitem3.URL:${socialm}\nitem3.X-ABLabel:GitHub\nitem4.ADR:;;${location};;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
 	    })
 	}
 	HBWABotInc.sendMessage(jid, { contacts: { displayName: `${list.length} Contact`, contacts: list }, ...opts }, { quoted })
